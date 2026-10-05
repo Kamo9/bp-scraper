@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Strange stats cookie puller",
+  "version": "1.0",
+  "description": "Safely sends bptf cookies to the strange stats calculator.",
+  "permissions": [
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://backpack.tf/*",
+    "http://localhost:8001/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
