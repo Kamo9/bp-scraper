@@ -7,7 +7,7 @@ class Browser_data(BaseModel):
 	cookies: dict;
 	useragent: str;
 
-fastapi = FastAPI(title="Strange stats");
+app = FastAPI(title="Strange stats");
 
 user_data = {};
 
@@ -27,6 +27,9 @@ async def get_inventory():
 		"User-Agent": user_data["useragent"]
 	};
 	# zrequestuj cos
+	return {
+		"message": json.dumps(user_data["useragent"], indent=4)
+	}
 @app.get("/")
 async def home():
 	return {

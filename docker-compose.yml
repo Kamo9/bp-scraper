@@ -1,0 +1,11 @@
+version: '3.8'
+
+services: 
+  web-app:
+    build: .
+    container_name: strange-stats
+    ports:
+      - "8001:8001"
+    volumes:
+      - .:/app
+    restart: always
