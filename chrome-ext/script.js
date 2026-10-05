@@ -11,14 +11,14 @@
         const cookie_map = {};
         cookies.forEach(c => cookie_map[c.name] = c.value);
 
-        const useragent = navigator.userAgent;
+        const user_agent = navigator.userAgent;
 
         const response = await fetch(BACKEND_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             cookies: cookie_map,
-            user_agent: useragent
+            useragent: user_agent
           })
         });
 
