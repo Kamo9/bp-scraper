@@ -23,23 +23,41 @@ async def save_session(data: Browser_data):
 @app.get("/api/inventory")
 async def get_inventory():
 	if("cookies" not in user_data):
-		raise HTTPException(status_code=400, detail="No cookies saved, user the extension to pull cookies.");
+		raise HTTPException(status_code=400, detail="No cookies saved, use the extension to pull cookies first.");
 	headers = {
 		"User-Agent": user_data["useragent"]
 	};
 
+	steamid64 = user_data["cookies"]["stack[user]"];
 	timestamps = [];
-	stamp_url = "https://backpack.tf/profiles/"+user_data["cookies"]["stack[user]"];
+	saved_inventories = {};
+
+	stamp_url = "https://backpack.tf/profiles/"+steamid64;
 	stamp_req = requests.get(stamp_url, headers=headers, cookies=user_data["cookies"]);
 	stamp_soup = BeautifulSoup(stamp_req.text, "html.parser");
 	for stamp in stamp_soup.find_all("option"):
 		timestamps.append(stamp.get("value"));
 
+	i_timestamp = 0;
+	for i_timestamp in range(i_timestamp, 2):
+		inv_url = "https://backpack.tf/_inventory/"+steamid64+"?time="+timestamps[i_timestamp]+"&source=steam&fallback=true";
+		try:
+			inv_req = requests.get(inv_url, cookies=user_data["cookies"], headers=headers);
+			inv_json = json.loads(inv_req.text);
+			inv_soup = BeautifulSoup(inv_json["html"], "html.parser");
+			stranges_in_inv = {};
+			for strange_raw in inv_soup.select(".q-440-border-11"):
+				stranges_in_inv[strange_raw.attrs["data-original_id"]] = strange_raw.attrs;
+			saved_inventories[timestamps[i_timestamp]] = stranges_in_inv;
+		except Exception as e:
+			return{
+				"message": f"failure: {e}"
+			}
 	return {
-		"message": timestamps
+		"message": saved_inventories
 	}
 @app.get("/")
 async def home():
 	return {
-		"message": "Hello bro"
+		"message": "Hi bro"
 	};
