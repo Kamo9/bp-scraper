@@ -47,8 +47,21 @@ async def get_inventory():
 			inv_soup = BeautifulSoup(inv_json["html"], "html.parser");
 			stranges_in_inv = {};
 			for strange_raw in inv_soup.select(".q-440-border-11"):
-				stranges_in_inv[strange_raw.attrs["data-original_id"]] = strange_raw.attrs;
+				strange_string = strange_raw.attrs["data-ke1"].split(" ");
+				strange_weapon = {																	#short names to save space
+				"n": strange_raw.attrs["title"], 													#n - name
+				"str_c": int(strange_string[0].replace(",","")),									#str_c - strange count
+				"str_c_n": " ".join(strange_string[1:]),											#stc_c_n - strange count name
+				"p1_n": strange_raw.attrs.get("data-part_name_1"), 									#part 1 name
+				"p1_c": int(strange_raw.attrs.get("data-part_score_1", "0").replace(",", "")),		#part 2 count
+				"p2_n": strange_raw.attrs.get("data-part_name_2"),									#etc..
+				"p2_c": int(strange_raw.attrs.get("data-part_score_2", "0").replace(",", "")),
+				"p3_n": strange_raw.attrs.get("data-part_name_3"),
+				"p3_c": int(strange_raw.attrs.get("data-part_score_3", "0").replace(",", ""))
+				};
+				stranges_in_inv[strange_raw.attrs["data-original_id"]] = strange_weapon;
 			saved_inventories[timestamps[i_timestamp]] = stranges_in_inv;
+			
 		except Exception as e:
 			return{
 				"message": f"failure: {e}"
