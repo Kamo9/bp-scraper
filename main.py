@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from bs4 import BeautifulSoup
 from pydantic import BaseModel
 import requests
 import json
@@ -26,9 +27,16 @@ async def get_inventory():
 	headers = {
 		"User-Agent": user_data["useragent"]
 	};
-	# zrequestuj cos
+
+	timestamps = [];
+	stamp_url = "https://backpack.tf/profiles/"+user_data["cookies"]["stack[user]"];
+	stamp_req = requests.get(stamp_url, headers=headers, cookies=user_data["cookies"]);
+	stamp_soup = BeautifulSoup(stamp_req.text, "html.parser");
+	for stamp in stamp_soup.find_all("option"):
+		timestamps.append(stamp.get("value"));
+
 	return {
-		"message": json.dumps(user_data["useragent"], indent=4)
+		"message": timestamps
 	}
 @app.get("/")
 async def home():
