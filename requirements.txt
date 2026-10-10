@@ -2,4 +2,6 @@ fastapi
 uvicorn
 requests
 pydantic
+sqlalchemy
+psycopg[binary]
 bs4
