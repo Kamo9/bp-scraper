@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from pydantic import BaseModel
 from sqlalchemy import ForeignKey, String, BigInteger
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.exc import IntegrityError
 import requests
 import json
 
@@ -46,11 +47,12 @@ async def pull_inventories(db: session = Depends(get_db)):
 		timestamps.append(stamp.get("value"));
 
 	i_timestamp = 0;
-	for i_timestamp in range(i_timestamp, 2):
+	for i_timestamp in range(i_timestamp, len(timestamps)):
 		current_timestamp_by_scraped_timestamps = timestamps[i_timestamp];
-		inv_url = "https://backpack.tf/_inventory/"+steamid64+"?time="+current_timestamp_by_scraped_timestamps+"&source=steam&fallback=true";
+		inv_url = f"https://backpack.tf/_inventory/{steamid64}?time={current_timestamp_by_scraped_timestamps}&source=steam&fallback=true";
 		try:
 			inv_req = requests.get(inv_url, cookies=user_data["cookies"], headers=headers);
+			inv_req.raise_for_status();
 			inv_json = json.loads(inv_req.text);
 			current_timestamp_actual = inv_json["time"]["timestamp"];
 			inv_soup = BeautifulSoup(inv_json["html"], "html.parser");
@@ -74,16 +76,22 @@ async def pull_inventories(db: session = Depends(get_db)):
 				db.add(strange_weapon);
 				db.commit();
 				db.refresh(strange_weapon);
-				stranges_in_inv[strange_raw.attrs["data-original_id"]] = strange_weapon;
 
-			saved_inventories[current_timestamp_actual] = stranges_in_inv;
+		except requests.exceptions.HTTPError as e:
+			continue;
+
+		except sqlalchemy.exc.IntegrityError as e:
+			db.rollback();
+			print(f"Unique constraint prevented the insertion, info: {e}");	
+			continue;
 			
 		except Exception as e:
+			db.rollback();
 			return{
 				"message": f"failure: {e}"
 			}
 	return {
-		"message": saved_inventories
+		"message": "ok, check db"
 	}
 @app.get("/")
 async def home():
