@@ -30,26 +30,36 @@ async def save_session(data: Browser_data):
 	}
 @app.get("/api/pull-inventories")
 async def pull_inventories(db: session = Depends(get_db)):
+
 	if("cookies" not in user_data):
 		raise HTTPException(status_code=400, detail="No cookies saved, use the extension to pull cookies first.");
+
 	headers = {
 		"User-Agent": user_data["useragent"]
 	};
 
 	steamid64 = user_data["cookies"]["stack[user]"];
-	timestamps = [];
-	saved_inventories = {};
-
+	# timestamps for all possible downloadable inventories are stored in the dropdown on the static part of the user's backpack page
+	scraped_timestamps = [];
 	stamp_url = "https://backpack.tf/profiles/"+steamid64;
 	stamp_req = requests.get(stamp_url, headers=headers, cookies=user_data["cookies"]);
 	stamp_soup = BeautifulSoup(stamp_req.text, "html.parser");
 	for stamp in stamp_soup.find_all("option"):
-		timestamps.append(stamp.get("value"));
+		scraped_timestamps.append(stamp.get("value"));
+
+	for saved_stamp in (db.query(models.StrangeWeapon.timestamp).filter(models.StrangeWeapon.steamid == steamid64).distinct().all()): # query to get existing timestamps
+		stamp_clean = str(saved_stamp[0]);
+		try:
+			scraped_timestamps.remove(stamp_clean);
+		except ValueError: # only happens for the inventories pulled using the "Most Recent" timestamp (no timestamp value) in the dropdown.
+			continue;
 
 	i_timestamp = 0;
-	for i_timestamp in range(i_timestamp, len(timestamps)):
-		current_timestamp_by_scraped_timestamps = timestamps[i_timestamp];
+	for i_timestamp in range(i_timestamp, len(scraped_timestamps)):
+		current_timestamp_by_scraped_timestamps = scraped_timestamps[i_timestamp];
+
 		inv_url = f"https://backpack.tf/_inventory/{steamid64}?time={current_timestamp_by_scraped_timestamps}&source=steam&fallback=true";
+
 		try:
 			inv_req = requests.get(inv_url, cookies=user_data["cookies"], headers=headers);
 			inv_req.raise_for_status();
@@ -80,7 +90,7 @@ async def pull_inventories(db: session = Depends(get_db)):
 		except requests.exceptions.HTTPError as e:
 			continue;
 
-		except sqlalchemy.exc.IntegrityError as e:
+		except IntegrityError as e:
 			db.rollback();
 			print(f"Unique constraint prevented the insertion, info: {e}");	
 			continue;

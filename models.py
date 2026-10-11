@@ -1,8 +1,9 @@
 from database import Base
 
 from typing import Optional
-from sqlalchemy import Column, BigInteger, String, DateTime, func
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
+
 class StrangeWeapon(Base):
 	__tablename__ = "weapons";
 
