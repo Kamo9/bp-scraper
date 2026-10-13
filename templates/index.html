@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html onload="ref()">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" href="static/favicon.png" type="image/x-icon">
+	<title>strange stats page 2</title>
+	<style type="text/css">
+		*{
+			box-sizing: border-box;
+			margin: 0 auto;
+			padding: 0;
+			font-family: sans-serif;
+		}
+		div#container{
+			width: 100%;
+			height: 100%;
+			position: absolute;
+		}
+		.niema{
+			display:none;
+		}
+		.cleanbutton{
+			all: unset;
+		}
+		header{
+			float: left;
+			background-color: blue;
+			color: white;
+			align-content: center;
+			height: 10%;
+			width: 100%;
+			border-right: 4px black double;
+			border-bottom: 4px black double;
+		}
+		.przycisk button{
+			width: 100%;
+			display: inline-block;
+			border: none;
+			margin-bottom: 5px;
+			padding-bottom: 5px;
+			padding-top: 5px;
+			background: #69928f;
+			float: left;
+			text-align: center;
+			text-decoration: none;
+			color: #000000;
+		}
+		.przycisk h4{
+			text-align: center;
+		}
+		.przycisk button:hover{
+			background-color: #799d9b;
+		}
+		.tytul{
+			text-align: center;
+		}
+		#lewo{
+			float: left;
+			height: 90%;
+			width: 15%;
+			background-color: slateblue;
+			border-right: 4px black double;
+		}
+		#prawo{
+			float: left;
+			height: 90%;
+			width: 85%;
+			background-color: ghostwhite;
+		}
+		#lewo ul{
+			list-style: none;
+		}
+		#lewo li{
+			float: left;
+			height: 15%;
+			width: 100%;
+			text-align: center;
+		}
+		#lewo a{
+			display: block;
+			text-decoration: none;
+			color: #000;
+		}
+		#prawo-tekst{
+			float: left;
+			height: 100%;
+			width: 50%;
+			text-align: center;
+			background-color: slateblue;
+			border-right: 4px black double;
+		}
+	</style>
+</head>
+<body>
+<div id="container">
+	<header>
+		<span id="logo"><button onclick="show_home()" class="cleanbutton"><h2>Strange Stats page</h2></button></span>
+	</header>
+	<section id="lewo" class="przycisk">
+		<ul>
+			<li><button onclick="show_upload()" class="cleanbutton" id="goto_upload">Upload your stats</button></li>
+			<li><button onclick="show_display()" class="cleanbutton" id="goto_display">See your stats</button></li>
+		</ul>
+	</section>
+	<section id="prawo">
+		<section id="prawo-tekst">
+			<div id="content-home">
+				<h2>Welcome to strange stats displayer</h2>
+				<h4>This application helps to pull backpack.tf data about your strange weapons and display it in graphs.</h4>
+				<p>Use the menu buttons to navigate the app.</p>
+			</div>
+			<div class="niema" id="content-upload">
+				<h2>Get your inventories</h2>
+				<h4>We need backpack.tf cookies to pull historical inventories from them.</h4>
+				<h4>Fill in the below fields and proceed to starting the downloads (they take some time)</h4>	
+				<div id="cookie-pull-status">Waiting for cookies from extension...</div>
+				<button onclick="refresh_cookie_status()" id="refresh">Refresh cookie status</button>
+			</div>
+			<div class="niema" id="content-display">
+				<h2>Your stats</h2>
+				<h4>Your stats for downloaded inventories</h4>
+				<h4>If the data is incomplete, download the remaining backpack.tf inventories.</h4>			
+			</div>
+		</section>
+	</section>
+</div>
+</body>
+<script>
+function show_home(){
+	document.getElementById("content-home").classList.remove("niema");
+	document.getElementById("content-upload").classList.add("niema");
+	document.getElementById("content-display").classList.add("niema");
+}
+function show_upload(){
+	document.getElementById("content-upload").classList.remove("niema");
+	document.getElementById("content-home").classList.add("niema");
+	document.getElementById("content-display").classList.add("niema");
+}
+function show_display(){
+	document.getElementById("content-display").classList.remove("niema");
+	document.getElementById("content-upload").classList.add("niema");
+	document.getElementById("content-home").classList.add("niema");
+}
+async function refresh_cookie_status(){
+	const info_div = document.getElementById("cookie-pull-status");
+	try{
+		const response = await fetch("/api/pull-inventories");
+		if(response.ok){
+			info_div.innerHTML = "Got cookies, wait...";
+		}
+	}catch (e){
+		info_div.innerHTML = "Error: " + e.message;
+	}
+}
+	/*I hate how this is done.*/
+
+</script>
+</html>

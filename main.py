@@ -1,11 +1,12 @@
 import models
 from database import engine, Base, get_db, session
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
-from sqlalchemy import ForeignKey, String, BigInteger
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.exc import IntegrityError
 import requests
 import json
@@ -17,6 +18,10 @@ class Browser_data(BaseModel):
 Base.metadata.create_all(bind=engine);
 
 app = FastAPI(title="Strange stats");
+
+app.mount("/static", StaticFiles(directory="static"), name="static");
+
+templates = Jinja2Templates(directory="templates");
 
 user_data = {};
 
@@ -103,8 +108,6 @@ async def pull_inventories(db: session = Depends(get_db)):
 	return {
 		"message": "ok, check db"
 	}
-@app.get("/")
-async def home():
-	return {
-		"message": "Hi bro"
-	};
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+	return templates.TemplateResponse(request, "index.html");

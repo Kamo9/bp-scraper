@@ -3,9 +3,14 @@ from database import Base
 from typing import Optional
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.schema import UniqueConstraint
 
 class StrangeWeapon(Base):
 	__tablename__ = "weapons";
+
+	__table_args__ = (
+		UniqueConstraint("timestamp", "original_id", name="unique_og_id_and_timestamp_pair"),
+		)
 
 	id: Mapped[int] = mapped_column(primary_key=True);
 	steamid: Mapped[str] = mapped_column(String(17));

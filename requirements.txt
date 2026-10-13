@@ -5,3 +5,4 @@ pydantic
 sqlalchemy
 psycopg[binary]
 bs4
+jinja2
