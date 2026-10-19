@@ -27,5 +27,5 @@ class StrangeWeapon(Base):
 	part3_count: Mapped[Optional[int]];
 
 	def __repr__(self) -> str:
-		return f"{self.id}, {self.steamid}, {self.timestamp}: {self.name}, {strange_count} {strange_count_name}";
+		return f"{self.id}, {self.steamid}, {self.timestamp}: {self.name}, {self.strange_count} {self.strange_count_name}";
 		

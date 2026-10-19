@@ -127,6 +127,7 @@
 </div>
 </body>
 <script>
+/*I hate how this is done.*/
 function show_home(){
 	document.getElementById("content-home").classList.remove("niema");
 	document.getElementById("content-upload").classList.add("niema");
@@ -145,15 +146,13 @@ function show_display(){
 async function refresh_cookie_status(){
 	const info_div = document.getElementById("cookie-pull-status");
 	try{
-		const response = await fetch("/api/pull-inventories");
+		const response = await fetch("/api/are-cookies-present");
 		if(response.ok){
-			info_div.innerHTML = "Got cookies, wait...";
+			info_div.innerHTML = response.message;
 		}
 	}catch (e){
 		info_div.innerHTML = "Error: " + e.message;
 	}
 }
-	/*I hate how this is done.*/
-
 </script>
 </html>

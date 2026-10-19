@@ -5,4 +5,5 @@ pydantic
 sqlalchemy
 psycopg[binary]
 bs4
+lxml>=5.3.0
 jinja2

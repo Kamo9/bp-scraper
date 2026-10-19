@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Strange stats cookie puller",
+  "name": "bp-scraper extension",
   "version": "1.0",
-  "description": "Safely sends bptf cookies to the strange stats calculator.",
+  "description": "Sends scraped data to the site where it's displayed.",
   "permissions": [
     "cookies"
   ],
