@@ -33,7 +33,7 @@
 			border-right: 4px black double;
 			border-bottom: 4px black double;
 		}
-		.przycisk button{
+		.przycisk{
 			width: 100%;
 			display: inline-block;
 			border: none;
@@ -90,69 +90,88 @@
 			background-color: slateblue;
 			border-right: 4px black double;
 		}
+		.fetched-item{
+			float: left;
+			height: 100px;
+			width: 250px;
+			border-radius: 5%;
+			border: 2px solid #CF6A32;
+			background-color: slategray;
+			font-family: sans-serif;
+			font-weight: bold;
+			margin: 5px;
+		}
 	</style>
 </head>
 <body>
 <div id="container">
 	<header>
-		<span id="logo"><button onclick="show_home()" class="cleanbutton"><h2>Strange Stats page</h2></button></span>
+		<span id="logo"><button onclick="show_home()" class="cleanbutton"><h2>BP Scraper</h2></button></span>
 	</header>
 	<section id="lewo" class="przycisk">
 		<ul>
-			<li><button onclick="show_upload()" class="cleanbutton" id="goto_upload">Upload your stats</button></li>
-			<li><button onclick="show_display()" class="cleanbutton" id="goto_display">See your stats</button></li>
+			<li><button onclick="show_extension()" class="przycisk cleanbutton" id="goto_display">Get the extension</button></li>
+			<li><button onclick="show_display()" class="przycisk cleanbutton" id="goto_display">See your stats</button></li>
 		</ul>
 	</section>
 	<section id="prawo">
 		<section id="prawo-tekst">
 			<div id="content-home">
 				<h2>Welcome to strange stats displayer</h2>
-				<h4>This application helps to pull backpack.tf data about your strange weapons and display it in graphs.</h4>
+				<h4>This application helps to pull backpack.tf data about your strange weapons and display it nicely.</h4>
 				<p>Use the menu buttons to navigate the app.</p>
-			</div>
-			<div class="niema" id="content-upload">
-				<h2>Get your inventories</h2>
-				<h4>We need backpack.tf cookies to pull historical inventories from them.</h4>
-				<h4>Fill in the below fields and proceed to starting the downloads (they take some time)</h4>	
-				<div id="cookie-pull-status">Waiting for cookies from extension...</div>
-				<button onclick="refresh_cookie_status()" id="refresh">Refresh cookie status</button>
 			</div>
 			<div class="niema" id="content-display">
 				<h2>Your stats</h2>
 				<h4>Your stats for downloaded inventories</h4>
-				<h4>If the data is incomplete, download the remaining backpack.tf inventories.</h4>			
+				<h4>If the data is incomplete, download the remaining backpack.tf inventories.</h4>	
+				<p>Your steamid64:</p>
+				<input type="text" id="steamid">
+				<button id="get-data">Show your data</button>
+				<div id="fetched-items">
+					
+				</div>
+			</div>
+			<div class="niema" id="content-extension">
+				<h2>Get the extension</h2>
+				<h4>Use the extension to upload inventories into the server</h4>
+				<h4>The information will be used to display items on this site.</h4>
+				<a class="przycisk" target="_blank" href="https://github.com/Kamo9/bp-scraper/tree/dea214c3872a2a9f5b89099834740ff0c3eea1d7/chrome-ext">Download</a>			
 			</div>
 		</section>
 	</section>
 </div>
 </body>
 <script>
-/*I hate how this is done.*/
+const BACKEND_URL = "http://localhost:8001"
+function show_extension(){
+	document.getElementById("content-extension").classList.remove("niema");
+	document.getElementById("content-display").classList.add("niema");
+	document.getElementById("content-home").classList.add("niema");
+}
 function show_home(){
 	document.getElementById("content-home").classList.remove("niema");
-	document.getElementById("content-upload").classList.add("niema");
 	document.getElementById("content-display").classList.add("niema");
-}
-function show_upload(){
-	document.getElementById("content-upload").classList.remove("niema");
-	document.getElementById("content-home").classList.add("niema");
-	document.getElementById("content-display").classList.add("niema");
+	document.getElementById("content-extension").classList.add("niema");
 }
 function show_display(){
 	document.getElementById("content-display").classList.remove("niema");
-	document.getElementById("content-upload").classList.add("niema");
 	document.getElementById("content-home").classList.add("niema");
+	document.getElementById("content-extension").classList.add("niema");
 }
-async function refresh_cookie_status(){
-	const info_div = document.getElementById("cookie-pull-status");
-	try{
-		const response = await fetch("/api/are-cookies-present");
-		if(response.ok){
-			info_div.innerHTML = response.message;
-		}
-	}catch (e){
-		info_div.innerHTML = "Error: " + e.message;
-	}
-}
+document.getElementById("get-data").addEventListener("click", async () => {
+	const steamid64 = document.getElementById("steamid").value;
+	const item_container = document.getElementById("fetched-items");
+	item_container.innerHTML = "";
+	items_response = await fetch(`${BACKEND_URL}/api/fetch-user-items/${steamid64}`);
+	items_json = (await items_response.json()).items;
+	items_map = new Map(Object.entries(items_json));
+
+	console.log(items_map);
+	items_map.forEach((value, key) => {
+		item_container.innerHTML += `<div class="fetched-item" id="fetched-item-${key}">${value}</div>`;
+		console.log(value);
+	})
+})
 </script>
 </html>

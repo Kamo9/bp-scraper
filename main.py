@@ -25,7 +25,7 @@ templates = Jinja2Templates(directory="templates");
 async def get_existing_timestamps(steamid64: str, db: session = Depends(get_db)):
 	try:
 		query = text("SELECT DISTINCT timestamp from weapons where steamid = :steamid64");
-		query_result = (db.execute(query, {"steamid64": steamid64}));
+		query_result = db.execute(query, {"steamid64": steamid64});
 		timestamps = set([row[0] for row in query_result]);
 
 		return{
@@ -78,6 +78,24 @@ async def upload_inventory(payload: dict, db: session = Depends(get_db)):
 		"status": "success",
 		"message": "Successfully added."
 	};
+@app.get("/api/fetch-user-items/{steamid64}")
+async def fetch_user_items(steamid64: str, db: session = Depends(get_db)):
+	query = text("""
+		SELECT distinct original_id, name 
+		FROM weapons 
+		WHERE steamid = :steamid64 
+		AND timestamp = (select timestamp from weapons where steamid = :steamid64 order by timestamp desc limit 1)
+		""");
+	query_result = db.execute(query, {"steamid64": steamid64});
+	dict_result = {};
+	for row in query_result:
+		dict_result[row[0]] = row[1];
+
+	json_result = json.dumps(dict_result);
+	return{
+		"status": "success",
+		"items": dict_result
+	}
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
