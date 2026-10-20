@@ -52,11 +52,11 @@ async def upload_inventory(payload: dict, db: session = Depends(get_db)):
 					strange_count_name = " ".join(strange_string[1:]),
 					strange_count = int(strange_string[0].replace(",","")),
 					part1_name = strange_raw.attrs.get("data-part_name_1"), 
-					part1_count = int(strange_raw.attrs.get("data-part_score_1", "0").replace(",", "")),
+					part1_count = int(strange_raw.attrs.get("data-part_score_1", "0").replace(",", "")) if part1_name else None,
 					part2_name = strange_raw.attrs.get("data-part_name_2"), 
-					part2_count = int(strange_raw.attrs.get("data-part_score_2", "0").replace(",", "")),
+					part2_count = int(strange_raw.attrs.get("data-part_score_2", "0").replace(",", "")) if part2_name else None,
 					part3_name = strange_raw.attrs.get("data-part_name_3"), 
-					part3_count = int(strange_raw.attrs.get("data-part_score_3", "0").replace(",", "")),
+					part3_count = int(strange_raw.attrs.get("data-part_score_3", "0").replace(",", "")) if part3_name else None,
 				);
 			try:
 				db.add(strange_weapon);
@@ -95,6 +95,23 @@ async def fetch_user_items(steamid64: str, db: session = Depends(get_db)):
 	return{
 		"status": "success",
 		"items": dict_result
+	}
+
+@app.get("/api/fetch-item-data/{original_id}")
+async def fetch_item_data(original_id: str, steamid64: str, db: session = Depends(get_db)):
+	query = text("""
+			SELECT timestamp, name, strange_count, strange_count_name, part1_count, part1_name, part2_count, part2_name, part3_count, part3_name
+			FROM weapons
+			WHERE steamid = :steamid64
+			AND original_id = :original_id
+		""");
+	query_result = db.execute(query, {"steamid64": steamid64, "original_id": original_id});
+	dict_result = {};
+	for row in query_result:
+		dict_result[row[0]] = [x for x in row[1:]];
+	return{
+		"status": "success",
+		"item_data": dict_result
 	}
 
 @app.get("/", response_class=HTMLResponse)

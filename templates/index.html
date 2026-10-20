@@ -33,6 +33,15 @@
 			border-right: 4px black double;
 			border-bottom: 4px black double;
 		}
+		footer{
+			float: left;
+			background-color: blue;
+			color: white;
+			align-content: center;
+			height: 10%;
+			width: 100%;
+			border-top: 4px black double;
+		}
 		.przycisk{
 			width: 100%;
 			display: inline-block;
@@ -46,6 +55,9 @@
 			text-decoration: none;
 			color: #000000;
 		}
+		.przycisk:hover{
+			background: #638b8a;
+		}
 		.przycisk h4{
 			text-align: center;
 		}
@@ -57,16 +69,17 @@
 		}
 		#lewo{
 			float: left;
-			height: 90%;
+			height: 80%;
 			width: 15%;
 			background-color: slateblue;
 			border-right: 4px black double;
 		}
 		#prawo{
 			float: left;
-			height: 90%;
+			height: 80%;
 			width: 85%;
 			background-color: ghostwhite;
+
 		}
 		#lewo ul{
 			list-style: none;
@@ -86,9 +99,22 @@
 			float: left;
 			height: 100%;
 			width: 50%;
+			overflow-y: auto;
 			text-align: center;
 			background-color: slateblue;
 			border-right: 4px black double;
+		}
+		#prawo-wykresy{
+			float: left;
+			height: 100%;
+			width: 50%;
+			overflow-y: auto;
+			background-color: lightblue;
+			border-right: 4px black double;
+		}
+		#fetched-items{
+			max-height: 100%;
+			overflow-y: auto;
 		}
 		.fetched-item{
 			float: left;
@@ -101,6 +127,20 @@
 			font-weight: bold;
 			margin: 5px;
 		}
+		.fetched-item:hover{
+			background-color: gray;
+		}
+		.item-data-box{
+			float: left;
+			height: 200px;
+			width: 98%;
+			padding: 2px;
+			text-align: left;
+			color: #CF6A32;
+			border: 2px solid black;
+			background-color: slategray;
+			margin: 5px;
+		}
 	</style>
 </head>
 <body>
@@ -108,7 +148,7 @@
 	<header>
 		<span id="logo"><button onclick="show_home()" class="cleanbutton"><h2>BP Scraper</h2></button></span>
 	</header>
-	<section id="lewo" class="przycisk">
+	<section id="lewo">
 		<ul>
 			<li><button onclick="show_extension()" class="przycisk cleanbutton" id="goto_display">Get the extension</button></li>
 			<li><button onclick="show_display()" class="przycisk cleanbutton" id="goto_display">See your stats</button></li>
@@ -139,11 +179,18 @@
 				<a class="przycisk" target="_blank" href="https://github.com/Kamo9/bp-scraper/tree/dea214c3872a2a9f5b89099834740ff0c3eea1d7/chrome-ext">Download</a>			
 			</div>
 		</section>
+		<section id="prawo-wykresy">
+		
+		</section>
 	</section>
+	<footer>
+		
+	</footer>
 </div>
 </body>
 <script>
-const BACKEND_URL = "http://localhost:8001"
+const BACKEND_URL = "http://localhost:8001";
+let steamid64 = ""; //yes this is needed because when i pass it between functions it changes to a number and rounds out for some reason
 function show_extension(){
 	document.getElementById("content-extension").classList.remove("niema");
 	document.getElementById("content-display").classList.add("niema");
@@ -159,18 +206,34 @@ function show_display(){
 	document.getElementById("content-home").classList.add("niema");
 	document.getElementById("content-extension").classList.add("niema");
 }
+async function display_data_for_item(key){
+	const chart_container = document.getElementById("prawo-wykresy");
+
+	const item_data_response = await fetch(`${BACKEND_URL}/api/fetch-item-data/${key}?steamid64=${steamid64}`);
+	const item_data_json = await item_data_response.json();
+
+	const item_data_map = new Map(Object.entries(item_data_json.item_data));
+
+	const latest_timestamp = Array.from(item_data_map.keys()).pop(); // for the "Current stats:"
+
+	if(document.getElementById(`item-data-${key}`)){
+		chart_container.removeChild(document.getElementById(`item-data-${key}`)); // if box for the item already exists, delete it
+	}else{
+		chart_container.innerHTML += `<div class="item-data-box" id="item-data-${key}">
+<h3>${item_data_map.get(latest_timestamp)[0]}</h4><p>Current stats: ${item_data_map.get(latest_timestamp).slice(1).join(" ")}</p>
+	</div>`;
+	}
+}
 document.getElementById("get-data").addEventListener("click", async () => {
-	const steamid64 = document.getElementById("steamid").value;
+	steamid64 = document.getElementById("steamid").value;
 	const item_container = document.getElementById("fetched-items");
 	item_container.innerHTML = "";
 	items_response = await fetch(`${BACKEND_URL}/api/fetch-user-items/${steamid64}`);
 	items_json = (await items_response.json()).items;
 	items_map = new Map(Object.entries(items_json));
 
-	console.log(items_map);
 	items_map.forEach((value, key) => {
-		item_container.innerHTML += `<div class="fetched-item" id="fetched-item-${key}">${value}</div>`;
-		console.log(value);
+		item_container.innerHTML += `<button onclick="display_data_for_item(${key})" class="fetched-item" id="fetched-item-${key}">${value}</button>`;
 	})
 })
 </script>
