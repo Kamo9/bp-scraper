@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html onload="ref()">
+<html lang="en" onload="ref()">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,7 +17,7 @@
 			height: 100%;
 			position: absolute;
 		}
-		.niema{
+		.hide{
 			display:none;
 		}
 		.cleanbutton{
@@ -28,7 +28,7 @@
 			background-color: blue;
 			color: white;
 			align-content: center;
-			height: 10%;
+			height: 5%;
 			width: 100%;
 			border-right: 4px black double;
 			border-bottom: 4px black double;
@@ -38,11 +38,11 @@
 			background-color: blue;
 			color: white;
 			align-content: center;
-			height: 10%;
+			height: 5%;
 			width: 100%;
 			border-top: 4px black double;
 		}
-		.przycisk{
+		.greenbutton{
 			width: 100%;
 			display: inline-block;
 			border: none;
@@ -55,47 +55,47 @@
 			text-decoration: none;
 			color: #000000;
 		}
-		.przycisk:hover{
+		.greenbutton:hover{
 			background: #638b8a;
 		}
-		.przycisk h4{
+		.greenbutton h4{
 			text-align: center;
 		}
-		.przycisk button:hover{
+		.greenbutton button:hover{
 			background-color: #799d9b;
 		}
 		.tytul{
 			text-align: center;
 		}
-		#lewo{
+		#left-section{
 			float: left;
-			height: 80%;
+			height: 90%;
 			width: 15%;
 			background-color: slateblue;
 			border-right: 4px black double;
 		}
-		#prawo{
+		#right-section{
 			float: left;
-			height: 80%;
+			height: 90%;
 			width: 85%;
 			background-color: ghostwhite;
 
 		}
-		#lewo ul{
+		#left-section ul{
 			list-style: none;
 		}
-		#lewo li{
+		#left-section li{
 			float: left;
 			height: 15%;
 			width: 100%;
 			text-align: center;
 		}
-		#lewo a{
+		#left-section a{
 			display: block;
 			text-decoration: none;
 			color: #000;
 		}
-		#prawo-tekst{
+		#right-section-items{
 			float: left;
 			height: 100%;
 			width: 50%;
@@ -104,7 +104,7 @@
 			background-color: slateblue;
 			border-right: 4px black double;
 		}
-		#prawo-wykresy{
+		#right-section-charts{
 			float: left;
 			height: 100%;
 			width: 50%;
@@ -112,11 +112,11 @@
 			background-color: lightblue;
 			border-right: 4px black double;
 		}
-		#fetched-items{
+		#item-buttons-container{
 			max-height: 100%;
 			overflow-y: auto;
 		}
-		.fetched-item{
+		.item-button{
 			float: left;
 			height: 100px;
 			width: 250px;
@@ -127,19 +127,28 @@
 			font-weight: bold;
 			margin: 5px;
 		}
-		.fetched-item:hover{
+		.item-button:hover{
 			background-color: gray;
 		}
+		.active-item-button{
+			background-color: gray;
+			border: 3px solid #CF6A32;
+		} 
 		.item-data-box{
 			float: left;
-			height: 200px;
-			width: 98%;
+			position: relative;
+			height: 300px;
+			width: 99%;
 			padding: 2px;
 			text-align: left;
 			color: #CF6A32;
 			border: 2px solid black;
 			background-color: slategray;
 			margin: 5px;
+		}
+		.item-canvas{
+			height: 100%;
+			width: 100%;
 		}
 	</style>
 </head>
@@ -148,38 +157,38 @@
 	<header>
 		<span id="logo"><button onclick="show_home()" class="cleanbutton"><h2>BP Scraper</h2></button></span>
 	</header>
-	<section id="lewo">
+	<section id="left-section">
 		<ul>
-			<li><button onclick="show_extension()" class="przycisk cleanbutton" id="goto_display">Get the extension</button></li>
-			<li><button onclick="show_display()" class="przycisk cleanbutton" id="goto_display">See your stats</button></li>
+			<li><button onclick="show_extension()" class="greenbutton cleanbutton" id="goto_display">Get the extension</button></li>
+			<li><button onclick="show_display()" class="greenbutton cleanbutton" id="goto_display">See your stats</button></li>
 		</ul>
 	</section>
-	<section id="prawo">
-		<section id="prawo-tekst">
+	<section id="right-section">
+		<section id="right-section-items">
 			<div id="content-home">
 				<h2>Welcome to strange stats displayer</h2>
 				<h4>This application helps to pull backpack.tf data about your strange weapons and display it nicely.</h4>
 				<p>Use the menu buttons to navigate the app.</p>
 			</div>
-			<div class="niema" id="content-display">
+			<div class="hide" id="content-display">
 				<h2>Your stats</h2>
 				<h4>Your stats for downloaded inventories</h4>
 				<h4>If the data is incomplete, download the remaining backpack.tf inventories.</h4>	
 				<p>Your steamid64:</p>
 				<input type="text" id="steamid">
 				<button id="get-data">Show your data</button>
-				<div id="fetched-items">
+				<div id="item-buttons-container">
 					
 				</div>
 			</div>
-			<div class="niema" id="content-extension">
+			<div class="hide" id="content-extension">
 				<h2>Get the extension</h2>
 				<h4>Use the extension to upload inventories into the server</h4>
 				<h4>The information will be used to display items on this site.</h4>
-				<a class="przycisk" target="_blank" href="https://github.com/Kamo9/bp-scraper/tree/dea214c3872a2a9f5b89099834740ff0c3eea1d7/chrome-ext">Download</a>			
+				<a class="greenbutton" target="_blank" href="https://github.com/Kamo9/bp-scraper/tree/dea214c3872a2a9f5b89099834740ff0c3eea1d7/chrome-ext">Download</a>			
 			</div>
 		</section>
-		<section id="prawo-wykresy">
+		<section id="right-section-charts">
 		
 		</section>
 	</section>
@@ -188,52 +197,137 @@
 	</footer>
 </div>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
 <script>
 const BACKEND_URL = "http://localhost:8001";
-let steamid64 = ""; //yes this is needed because when i pass it between functions it changes to a number and rounds out for some reason
+let steamid64 = ""; //yes this is needed because when i pass it between functions it for some reason changes to a number and gets rounded
+const item_charts = {};
+const chart_contexts = {};
+
 function show_extension(){
-	document.getElementById("content-extension").classList.remove("niema");
-	document.getElementById("content-display").classList.add("niema");
-	document.getElementById("content-home").classList.add("niema");
+	document.getElementById("content-extension").classList.remove("hide");
+	document.getElementById("content-display").classList.add("hide");
+	document.getElementById("content-home").classList.add("hide");
 }
 function show_home(){
-	document.getElementById("content-home").classList.remove("niema");
-	document.getElementById("content-display").classList.add("niema");
-	document.getElementById("content-extension").classList.add("niema");
+	document.getElementById("content-home").classList.remove("hide");
+	document.getElementById("content-display").classList.add("hide");
+	document.getElementById("content-extension").classList.add("hide");
 }
 function show_display(){
-	document.getElementById("content-display").classList.remove("niema");
-	document.getElementById("content-home").classList.add("niema");
-	document.getElementById("content-extension").classList.add("niema");
+	document.getElementById("content-display").classList.remove("hide");
+	document.getElementById("content-home").classList.add("hide");
+	document.getElementById("content-extension").classList.add("hide");
 }
-async function display_data_for_item(key){
-	const chart_container = document.getElementById("prawo-wykresy");
+function formatted_date(timestamp){
+	const date = new Date(timestamp * 1000);
+	const day = date.getDate();
+	const month = date.getMonth();
+}
+//-- on item button click
+async function display_data_for_item(original_id){
+	const box_container = document.getElementById("right-section-charts");
+	const current_item_data_box = document.getElementById(`item-data-${original_id}`);
+	const current_item_button = document.getElementById(`item-button-${original_id}`);
 
-	const item_data_response = await fetch(`${BACKEND_URL}/api/fetch-item-data/${key}?steamid64=${steamid64}`);
-	const item_data_json = await item_data_response.json();
-
-	const item_data_map = new Map(Object.entries(item_data_json.item_data));
-
-	const latest_timestamp = Array.from(item_data_map.keys()).pop(); // for the "Current stats:"
-
-	if(document.getElementById(`item-data-${key}`)){
-		chart_container.removeChild(document.getElementById(`item-data-${key}`)); // if box for the item already exists, delete it
+	if(current_item_data_box){ // toggling visibility of box on button click
+		if(current_item_data_box.classList.contains("hide")){
+			current_item_data_box.classList.remove("hide");
+			current_item_button.classList.add("active-item-button");
+		}else{
+			current_item_data_box.classList.add("hide");
+			current_item_button.classList.remove("active-item-button");
+		}
 	}else{
-		chart_container.innerHTML += `<div class="item-data-box" id="item-data-${key}">
-<h3>${item_data_map.get(latest_timestamp)[0]}</h4><p>Current stats: ${item_data_map.get(latest_timestamp).slice(1).join(" ")}</p>
-	</div>`;
+		const item_data_response = await fetch(`${BACKEND_URL}/api/fetch-item-data/${original_id}/${steamid64}`);
+		const item_data_json = await item_data_response.json();
+
+		const item_data_map = new Map(Object.entries(item_data_json.item_data));
+
+		const latest_timestamp = Array.from(item_data_map.keys()).pop(); // for the "Current stats:"
+
+		box_container.insertAdjacentHTML("beforeend", `<div class="item-data-box" id="item-data-${original_id}">
+			<h3>${item_data_map.get(latest_timestamp)[0]}</h3><p>Current stats: ${item_data_map.get(latest_timestamp).slice(1).join(" ")}</p>
+			<canvas class="item-canvas" id="item-canvas-${original_id}"></canvas>
+			</div>`);
+
+		current_item_button.classList.add("active-item-button");
+
+		const context = document.getElementById(`item-canvas-${original_id}`).getContext("2d");
+
+		chart_contexts[original_id] = context;
+
+		const timestamp_array = Array.from(item_data_map.keys());
+		const chart_x = [];
+		for(let i in timestamp_array){
+			chart_x.push(timestamp_array[i] * 1000);
+		}
+
+		const value_array = Array.from(item_data_map.values());
+
+		const chart_y = [];
+		for (let i in value_array){
+			chart_y.push(value_array[i][1]);
+		}
+
+		item_charts[original_id] = new Chart(chart_contexts[original_id], {
+				type: "line",
+				data: {
+					labels: chart_x,
+					datasets: [{
+						data: chart_y,
+						label: `${item_data_map.get(latest_timestamp)[2]}`,
+						backgroundColor: "#2A459A",
+						borderColor: "#2A459A",
+						color: "#000000",
+						borderWidth: 1,
+						tension: 0.1
+					}]
+				},
+				options:{
+					scales: {
+						y: {
+							beginAtZero: true
+						},
+						x: {
+							type: "time",
+							time: {
+								displayFormats: {
+									day: "dd-MM-yyyy"
+								},
+								tooltipFormat: "dd-MM-yyyy"
+							}
+						}
+					},
+					responsive: true,
+					maintainAspectRatio: true,
+					aspectRatio: 3|1,
+					elements: {
+						point: {
+							radius: 1
+						}
+					}
+				}
+			});
+		console.log(item_charts);
 	}
 }
+//-- on "show your data" button click
 document.getElementById("get-data").addEventListener("click", async () => {
 	steamid64 = document.getElementById("steamid").value;
-	const item_container = document.getElementById("fetched-items");
+	const item_container = document.getElementById("item-buttons-container");
+
 	item_container.innerHTML = "";
+
 	items_response = await fetch(`${BACKEND_URL}/api/fetch-user-items/${steamid64}`);
 	items_json = (await items_response.json()).items;
 	items_map = new Map(Object.entries(items_json));
 
 	items_map.forEach((value, key) => {
-		item_container.innerHTML += `<button onclick="display_data_for_item(${key})" class="fetched-item" id="fetched-item-${key}">${value}</button>`;
+		item_container.innerHTML += `<button onclick="display_data_for_item(${key})" class="item-button" id="item-button-${key}">${value}</button>`;
 	})
 })
 </script>

@@ -52,11 +52,11 @@ async def upload_inventory(payload: dict, db: session = Depends(get_db)):
 					strange_count_name = " ".join(strange_string[1:]),
 					strange_count = int(strange_string[0].replace(",","")),
 					part1_name = strange_raw.attrs.get("data-part_name_1"), 
-					part1_count = int(strange_raw.attrs.get("data-part_score_1", "0").replace(",", "")) if part1_name else None,
+					part1_count = int(strange_raw.attrs.get("data-part_score_1", "0").replace(",", "")) if strange_raw.attrs.get("data-part_name_1") else None,
 					part2_name = strange_raw.attrs.get("data-part_name_2"), 
-					part2_count = int(strange_raw.attrs.get("data-part_score_2", "0").replace(",", "")) if part2_name else None,
+					part2_count = int(strange_raw.attrs.get("data-part_score_2", "0").replace(",", "")) if strange_raw.attrs.get("data-part_name_2") else None,
 					part3_name = strange_raw.attrs.get("data-part_name_3"), 
-					part3_count = int(strange_raw.attrs.get("data-part_score_3", "0").replace(",", "")) if part3_name else None,
+					part3_count = int(strange_raw.attrs.get("data-part_score_3", "0").replace(",", "")) if strange_raw.attrs.get("data-part_name_3") else None,
 				);
 			try:
 				db.add(strange_weapon);
@@ -78,41 +78,56 @@ async def upload_inventory(payload: dict, db: session = Depends(get_db)):
 		"status": "success",
 		"message": "Successfully added."
 	};
+	
 @app.get("/api/fetch-user-items/{steamid64}")
 async def fetch_user_items(steamid64: str, db: session = Depends(get_db)):
-	query = text("""
-		SELECT distinct original_id, name 
-		FROM weapons 
-		WHERE steamid = :steamid64 
-		AND timestamp = (select timestamp from weapons where steamid = :steamid64 order by timestamp desc limit 1)
-		""");
-	query_result = db.execute(query, {"steamid64": steamid64});
-	dict_result = {};
-	for row in query_result:
-		dict_result[row[0]] = row[1];
+	try:
+		query = text("""
+			SELECT distinct original_id, name 
+			FROM weapons 
+			WHERE steamid = :steamid64 
+			AND timestamp = (select timestamp from weapons where steamid = :steamid64 order by timestamp desc limit 1)
+			""");
+		query_result = db.execute(query, {"steamid64": steamid64});
+		dict_result = {};
+		for row in query_result:
+			dict_result[row[0]] = row[1];
 
-	json_result = json.dumps(dict_result);
-	return{
-		"status": "success",
-		"items": dict_result
-	}
+		json_result = json.dumps(dict_result);
+		return{
+			"status": "success",
+			"items": dict_result
+		}
+	except Exception as e:
+		return{
+			"status": "error",
+			"details": f"Server failure: {e}"
+		}
 
-@app.get("/api/fetch-item-data/{original_id}")
+
+@app.get("/api/fetch-item-data/{original_id}/{steamid64}")
 async def fetch_item_data(original_id: str, steamid64: str, db: session = Depends(get_db)):
-	query = text("""
-			SELECT timestamp, name, strange_count, strange_count_name, part1_count, part1_name, part2_count, part2_name, part3_count, part3_name
-			FROM weapons
-			WHERE steamid = :steamid64
-			AND original_id = :original_id
-		""");
-	query_result = db.execute(query, {"steamid64": steamid64, "original_id": original_id});
-	dict_result = {};
-	for row in query_result:
-		dict_result[row[0]] = [x for x in row[1:]];
-	return{
-		"status": "success",
-		"item_data": dict_result
-	}
+	try:
+		query = text("""
+				SELECT timestamp, name, strange_count, strange_count_name, part1_count, part1_name, part2_count, part2_name, part3_count, part3_name
+				FROM weapons
+				WHERE steamid = :steamid64
+				AND original_id = :original_id
+				ORDER BY timestamp ASC
+			""");
+		query_result = db.execute(query, {"steamid64": steamid64, "original_id": original_id});
+		dict_result = {};
+		for row in query_result:
+			dict_result[row[0]] = [x for x in row[1:]];
+		return{
+			"status": "success",
+			"item_data": dict_result
+		}
+	except Exception as e:
+		return{
+			"status": "error",
+			"details": f"Server failure: {e}"
+		}
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
