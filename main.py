@@ -34,7 +34,10 @@ async def get_existing_timestamps(steamid64: str, db: session = Depends(get_db))
 			"timestamps": timestamps
 		}
 	except Exception as e:
-		raise HTTPException(status_code=500, detail=f"Failed to retrieve existing timestamps from db. {e}");
+		return{
+					"status": "error",
+					"message": f"Failure: {e}"
+				}
 
 @app.post("/api/upload-inventory")
 async def upload_inventory(payload: dict, db: session = Depends(get_db)):
@@ -149,30 +152,21 @@ async def fetch_user_items(steamid64: str, db: session = Depends(get_db), latest
 @app.get("/api/fetch-item-data/{original_id}/{steamid64}")
 async def fetch_item_data(original_id: str, steamid64: str, db: session = Depends(get_db)):
 	try:
-		query = text("""
+		items_query = text("""
 				SELECT timestamp, name, strange_count, strange_count_name, part1_count, part1_name, part2_count, part2_name, part3_count, part3_name
 				FROM weapons
 				WHERE steamid = :steamid64
 				AND original_id = :original_id
 				ORDER BY timestamp ASC
 			""");
-		query_result = db.execute(query, {"steamid64": steamid64, "original_id": original_id});
-		dict_result = {};
-		for row in query_result:
-			dict_result[row[0]] = [x for x in row[1:]];
-		return{
-			"status": "success",
-			"item_data": dict_result
-		}
-	except Exception as e:
-		return{
-			"status": "error",
-			"details": f"Server failure: {e}"
-		}
-@app.get("/api/fetch-item-markers/{original_id}/{steamid64}")
-async def fetch_item_data(original_id: str, steamid64: str, db: session = Depends(get_db)):
-	try:
-		query = text("""
+		items_query_result = db.execute(items_query, {"steamid64": steamid64, "original_id": original_id});
+
+		items_dict_result = {};
+		for row in items_query_result:
+			items_dict_result[row[0]] = [x for x in row[1:]];
+
+		# get markers for the item
+		marker_query = text("""
 			SELECT min(timestamp), name 
 			FROM weapons 
 			WHERE steamid = :steamid64
@@ -181,25 +175,26 @@ async def fetch_item_data(original_id: str, steamid64: str, db: session = Depend
 			ORDER BY min(timestamp) asc
 			OFFSET 1
 			""");
-		query_result = db.execute(query, {"steamid64": steamid64, "original_id": original_id});
-		list_result = [];
-		for row in query_result:
+		marker_query_result = db.execute(marker_query, {"steamid64": steamid64, "original_id": original_id});
+
+		marker_list_result = [];
+		for row in marker_query_result:
 			marker = {
 				"timestamp": row[0],
 				"name": row[1]
 			}
-			list_result.append(marker);
+			marker_list_result.append(marker);
+
 		return{
 			"status": "success",
-			"marker_data": list_result
+			"item_data": items_dict_result,
+			"item_markers": marker_list_result
 		}
 	except Exception as e:
 		return{
 			"status": "error",
 			"details": f"Server failure: {e}"
 		}
-
-
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):

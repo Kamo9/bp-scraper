@@ -255,13 +255,12 @@ async function display_data_for_item(original_id){
 		}
 	}else{
 		const item_data_response = await fetch(`${BACKEND_URL}/api/fetch-item-data/${original_id}/${steamid64}`);
-		const item_markers_response = await fetch(`${BACKEND_URL}/api/fetch-item-markers/${original_id}/${steamid64}`);
 
 		const item_data_json = await item_data_response.json();
-		const item_markers_json = await item_markers_response.json();
 
 		const item_data_map = new Map(Object.entries(item_data_json.item_data));
-		const item_markers_list = item_markers_json.marker_data;
+		const item_markers_list = item_data_json.item_markers;
+		
 		const latest_timestamp = Array.from(item_data_map.keys()).pop(); // for the "Current stats:"
 
 		box_container.insertAdjacentHTML("beforeend", `<div class="item-data-box" id="item-data-${original_id}">
