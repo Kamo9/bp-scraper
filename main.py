@@ -157,6 +157,37 @@ async def fetch_item_data(original_id: str, steamid64: str, db: session = Depend
 			"status": "error",
 			"details": f"Server failure: {e}"
 		}
+@app.get("/api/fetch-item-markers/{original_id}/{steamid64}")
+async def fetch_item_data(original_id: str, steamid64: str, db: session = Depends(get_db)):
+	try:
+		query = text("""
+			SELECT min(timestamp), name 
+			FROM weapons 
+			WHERE steamid = :steamid64
+			AND original_id = :original_id
+			GROUP BY name
+			ORDER BY min(timestamp) asc
+			OFFSET 1
+			""");
+		query_result = db.execute(query, {"steamid64": steamid64, "original_id": original_id});
+		list_result = [];
+		for row in query_result:
+			marker = {
+				"timestamp": row[0],
+				"name": row[1]
+			}
+			list_result.append(marker);
+		return{
+			"status": "success",
+			"marker_data": list_result
+		}
+	except Exception as e:
+		return{
+			"status": "error",
+			"details": f"Server failure: {e}"
+		}
+
+
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):

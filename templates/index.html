@@ -210,6 +210,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 
 <script>
 const BACKEND_URL = "http://localhost:8001";
@@ -253,10 +254,13 @@ async function display_data_for_item(original_id){
 		}
 	}else{
 		const item_data_response = await fetch(`${BACKEND_URL}/api/fetch-item-data/${original_id}/${steamid64}`);
+		const item_markers_response = await fetch(`${BACKEND_URL}/api/fetch-item-markers/${original_id}/${steamid64}`);
+
 		const item_data_json = await item_data_response.json();
+		const item_markers_json = await item_markers_response.json();
 
 		const item_data_map = new Map(Object.entries(item_data_json.item_data));
-
+		const item_markers_list = item_markers_json.marker_data;
 		const latest_timestamp = Array.from(item_data_map.keys()).pop(); // for the "Current stats:"
 
 		box_container.insertAdjacentHTML("beforeend", `<div class="item-data-box" id="item-data-${original_id}">
@@ -323,6 +327,37 @@ async function display_data_for_item(original_id){
 					];
 		const chart_datasets = all_datasets.filter(dataset => dataset && dataset.data.some(val => val !== null && val !== undefined));
 
+		const marker_configs = {};
+
+		item_markers_list.forEach((marker, index) => {
+			const marker_key = `marker${index}`;
+			marker_configs[marker_key] = {
+				type: "line",
+				borderWidth: 2,
+				borderColor: "#FFFFFF",
+				scaleID : "x",
+				value: marker.timestamp * 1000,
+				label: {
+					display: false,
+					content: `Name change: ${marker.name}`,
+					yAdjust: -(40+20*index),
+					backgroundColor: "rgba(245,245,245,0)",
+					font:{
+						size: 10
+					}
+				},
+				enter({chart}){
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = true;
+			        chart.update('none');
+			    },
+			    leave({chart}) {
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = false;
+			        chart.update('none');
+			    }
+			}
+
+		});
+
 		item_charts[original_id] = new Chart(chart_contexts[original_id], {
 				type: "line",
 				data: {
@@ -350,6 +385,11 @@ async function display_data_for_item(original_id){
 					elements: {
 						point: {
 							radius: 2
+						}
+					},
+					plugins:{
+						annotation:{
+							annotations: marker_configs
 						}
 					}
 				}
