@@ -28,4 +28,9 @@ class StrangeWeapon(Base):
 
 	def __repr__(self) -> str:
 		return f"{self.id}, {self.steamid}, {self.timestamp}: {self.name}, {self.strange_count} {self.strange_count_name}";
-		
+
+class WeaponImages(Base):
+	__tablename__ = "weapon_images";
+
+	original_id: Mapped[str] = mapped_column(primary_key=True);
+	url: Mapped[str];

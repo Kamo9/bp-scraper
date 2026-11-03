@@ -99,6 +99,7 @@ for i_timestamp in range(i_timestamp, len(timestamps)):
 
     for strange_raw in inv_html.select(".q-440-border-11"):
         strange_list.append(strange_raw.attrs);
+        print(strange_raw.contents[1].attrs["style"]);
 
     # writes raw html inventories
 

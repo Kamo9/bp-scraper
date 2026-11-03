@@ -41,7 +41,6 @@ document.getElementById("scrape-button").addEventListener("click", async () => {
 				Server error: ${response.status}, trying the next one
 				</div>`;
 				continue;
-				console.log("THIS SHIT SHOULD NEVER SHOW UP");
 			}
 
 			const current_div = document.getElementById(`progress-box-${i}`);

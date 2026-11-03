@@ -123,9 +123,15 @@
 			border-radius: 5%;
 			border: 2px solid #CF6A32;
 			background-color: slategray;
+			color: #EBC3AD;
 			font-family: sans-serif;
 			font-weight: bold;
+			text-shadow: 2px 2px 5px #DD966F;
 			margin: 5px;
+			background-repeat: no-repeat;
+			background-size: 100px 100px;
+			background-color: center;
+			background-blend-mode: ;
 		}
 		.item-button:hover{
 			background-color: gray;
@@ -149,6 +155,10 @@
 		.item-canvas{
 			height: 100%;
 			width: 100%;
+		}
+		.bp-history-button{
+			float:right;
+			width:200px;
 		}
 	</style>
 </head>
@@ -250,7 +260,9 @@ async function display_data_for_item(original_id){
 		const latest_timestamp = Array.from(item_data_map.keys()).pop(); // for the "Current stats:"
 
 		box_container.insertAdjacentHTML("beforeend", `<div class="item-data-box" id="item-data-${original_id}">
-			<h3>${item_data_map.get(latest_timestamp)[0]}</h3><p>Current stats: ${item_data_map.get(latest_timestamp).slice(1).join(" ")}</p>
+			<a href="https://backpack.tf/item/${original_id}" class="greenbutton bp-history-button"target="_blank">backpack.tf history link</a>
+			<h3>${item_data_map.get(latest_timestamp)[0]}</h3>
+			<p>Current stats: ${item_data_map.get(latest_timestamp).slice(1).join(" ")}</p>
 			<canvas class="item-canvas" id="item-canvas-${original_id}"></canvas>
 			</div>`);
 
@@ -268,24 +280,54 @@ async function display_data_for_item(original_id){
 
 		const value_array = Array.from(item_data_map.values());
 
-		const chart_y = [];
+		const chart_main_stat = [];
+		const chart_part1 = [];
+		const chart_part2 = [];
+		const chart_part3 = [];
 		for (let i in value_array){
-			chart_y.push(value_array[i][1]);
+			chart_main_stat.push(value_array[i][1]);
+			chart_part1.push(value_array[i][3]);
+			chart_part2.push(value_array[i][5]);
+			chart_part3.push(value_array[i][7]);
 		}
+		const all_datasets = [{
+						data: chart_main_stat,
+						label: `${item_data_map.get(latest_timestamp)[2]}`,
+						backgroundColor: "#2A459A",
+						borderColor: "#2A459A",
+						color: "#000000",
+						borderWidth: 2,
+						tension: 0.1
+					},
+					{
+						data: chart_part1,
+						label: `${item_data_map.get(latest_timestamp)[4]}`,
+						backgroundColor: "#81ADD5",
+						borderColor: "#81ADD5",
+						color: "#000000"
+					},
+					{
+						data: chart_part2,
+						label: `${item_data_map.get(latest_timestamp)[6]}`,
+						backgroundColor: "#E56767",
+						borderColor: "#E56767",
+						color: "#000000"
+					},
+					{
+						data: chart_part3,
+						label: `${item_data_map.get(latest_timestamp)[8]}`,
+						backgroundColor: "#B2F49D",
+						borderColor: "#B2F49D",
+						color: "#000000"
+					}
+					];
+		const chart_datasets = all_datasets.filter(dataset => dataset && dataset.data.some(val => val !== null && val !== undefined));
 
 		item_charts[original_id] = new Chart(chart_contexts[original_id], {
 				type: "line",
 				data: {
 					labels: chart_x,
-					datasets: [{
-						data: chart_y,
-						label: `${item_data_map.get(latest_timestamp)[2]}`,
-						backgroundColor: "#2A459A",
-						borderColor: "#2A459A",
-						color: "#000000",
-						borderWidth: 1,
-						tension: 0.1
-					}]
+					datasets: chart_datasets
 				},
 				options:{
 					scales: {
@@ -304,15 +346,14 @@ async function display_data_for_item(original_id){
 					},
 					responsive: true,
 					maintainAspectRatio: true,
-					aspectRatio: 3|1,
+					aspectRatio: 3.6|1,
 					elements: {
 						point: {
-							radius: 1
+							radius: 2
 						}
 					}
 				}
 			});
-		console.log(item_charts);
 	}
 }
 //-- on "show your data" button click
@@ -326,8 +367,9 @@ document.getElementById("get-data").addEventListener("click", async () => {
 	items_json = (await items_response.json()).items;
 	items_map = new Map(Object.entries(items_json));
 
+
 	items_map.forEach((value, key) => {
-		item_container.innerHTML += `<button onclick="display_data_for_item(${key})" class="item-button" id="item-button-${key}">${value}</button>`;
+		item_container.innerHTML += `<button onclick="display_data_for_item(${key})"  style="${value[1]}" class="item-button" id="item-button-${key}">${value[0]}</button>`;
 	})
 })
 </script>

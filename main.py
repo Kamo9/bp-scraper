@@ -38,16 +38,22 @@ async def get_existing_timestamps(steamid64: str, db: session = Depends(get_db))
 
 @app.post("/api/upload-inventory")
 async def upload_inventory(payload: dict, db: session = Depends(get_db)):
+	# to not put excess weapon urls in the database. Pull existing first, if the current weapon's original_id is not in the table, add it.
+	original_id_query = text("SELECT DISTINCT original_id FROM weapon_images");
+	original_id_query_result = db.execute(original_id_query);
+	existing_original_ids_in_url_table = list(row[0] for row in original_id_query_result);
+
 	steamid64 = payload.get("steamid64");
 	inv_json = payload.get("inv_json");
 	inv_real_timestamp = inv_json["time"]["timestamp"];
 	inv_soup = BeautifulSoup(inv_json["html"], "lxml");
 	for strange_raw in inv_soup.select(".q-440-border-11"):
+			original_id = strange_raw.attrs.get("data-original_id");
 			strange_string = strange_raw.attrs["data-ke1"].split(" ");
 			strange_weapon = models.StrangeWeapon(
 					steamid = steamid64,
 					timestamp = inv_real_timestamp,
-					original_id = strange_raw.attrs.get("data-original_id"),
+					original_id = original_id,
 					name = strange_raw.attrs["title"],
 					strange_count_name = " ".join(strange_string[1:]),
 					strange_count = int(strange_string[0].replace(",","")),
@@ -58,6 +64,27 @@ async def upload_inventory(payload: dict, db: session = Depends(get_db)):
 					part3_name = strange_raw.attrs.get("data-part_name_3"), 
 					part3_count = int(strange_raw.attrs.get("data-part_score_3", "0").replace(",", "")) if strange_raw.attrs.get("data-part_name_3") else None,
 				);
+			if(original_id not in existing_original_ids_in_url_table):
+				strange_image = models.WeaponImages(
+					original_id = strange_raw.attrs.get("data-original_id"),
+					url = strange_raw.contents[1].attrs["style"],
+					)
+				try:
+					db.add(strange_image)
+					db.commit();
+					db.refresh(strange_image);
+				except IntegrityError as e:
+					db.rollback();
+					return{
+						"status": "error",
+						"message": "Weapon url already in database."
+					}
+				except Exception as e:
+					db.rollback();
+					return{
+						"status": "error",
+						"message": f"Failure: {e}"
+					}
 			try:
 				db.add(strange_weapon);
 				db.commit();
@@ -83,17 +110,19 @@ async def upload_inventory(payload: dict, db: session = Depends(get_db)):
 async def fetch_user_items(steamid64: str, db: session = Depends(get_db)):
 	try:
 		query = text("""
-			SELECT distinct original_id, name 
-			FROM weapons 
+			SELECT distinct w.original_id, w.name, wi.url
+			FROM weapons w
+			JOIN weapon_images wi
+			ON w.original_id = wi.original_id
 			WHERE steamid = :steamid64 
 			AND timestamp = (select timestamp from weapons where steamid = :steamid64 order by timestamp desc limit 1)
 			""");
 		query_result = db.execute(query, {"steamid64": steamid64});
+
 		dict_result = {};
 		for row in query_result:
-			dict_result[row[0]] = row[1];
+			dict_result[row[0]] = (row[1],row[2]);
 
-		json_result = json.dumps(dict_result);
 		return{
 			"status": "success",
 			"items": dict_result
