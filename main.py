@@ -107,8 +107,8 @@ async def upload_inventory(payload: dict, db: session = Depends(get_db)):
 	};
 	
 @app.get("/api/fetch-user-items/{steamid64}")
-async def fetch_user_items(steamid64: str, db: session = Depends(get_db)):
-	try:
+async def fetch_user_items(steamid64: str, db: session = Depends(get_db), latest: bool | None = None):
+	if(latest):
 		query = text("""
 			SELECT distinct w.original_id, w.name, wi.url
 			FROM weapons w
@@ -117,6 +117,18 @@ async def fetch_user_items(steamid64: str, db: session = Depends(get_db)):
 			WHERE steamid = :steamid64 
 			AND timestamp = (select timestamp from weapons where steamid = :steamid64 order by timestamp desc limit 1)
 			""");
+	else:
+		query = text("""
+			SELECT w.original_id, max(w.name), max(wi.url)
+			FROM weapons w
+			LEFT JOIN weapon_images wi
+			ON w.original_id = wi.original_id
+			WHERE steamid = :steamid64 
+			GROUP BY w.original_id
+			HAVING max(strange_count) > 50
+			""");
+	
+	try:
 		query_result = db.execute(query, {"steamid64": steamid64});
 
 		dict_result = {};
