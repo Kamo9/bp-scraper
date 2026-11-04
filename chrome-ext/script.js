@@ -6,7 +6,7 @@ document.getElementById("scrape-button").addEventListener("click", async () => {
 	const progress_div = document.getElementById("progress-div");
 	const steamid64 = document.getElementById("steam-id").value;
 	status_div.innerText = "Pulling inventories...";
-
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve,ms));
 	try {
 		progress_div.innerHTML = "";
 		const db_timestamp_list_response = await fetch(`${BACKEND_URL}/api/get-existing-timestamps/${steamid64}`);
@@ -27,15 +27,22 @@ document.getElementById("scrape-button").addEventListener("click", async () => {
 		for(let i = 0; i < timestamps.length; i++){
 			let date = new Date(timestamps[i] * 1000);
 
+			await sleep(200);
 			const response = await fetch(`https://backpack.tf/_inventory/${steamid64}?time=${timestamps[i]}&source=steam&fallback=true`);
 			if(response.ok){
 				response_json = await response.json();
 				
 				progress_div.innerHTML += `<div id="progress-box-${i}">(${i+1}/${timestamps.length})
-				Inventory from ${date.getDate()}-${date.getMonth()}-${date.getFullYear()}
+				Inventory from ${date.getDate()}-${date.getMonth()+1}-${date.getFullYear()}
 				Trying to send...</div>`;
-			}
-			else{
+			}else if(response.status === 429){
+				progress_div.innerHTML += `<div id="progress-box-${i}">(${i+1}/${timestamps.length})
+				Inventory from ${date.getDate()}-${date.getMonth()+1}-${date.getFullYear()}
+				Server error: ${response.status}, trying the next one in 5s
+				</div>`;
+				await sleep(5000);
+				continue;
+			}else{
 				progress_div.innerHTML += `<div id="progress-box-${i}">(${i+1}/${timestamps.length})
 				Inventory from ${date.getDate()}-${date.getMonth()}-${date.getFullYear()}
 				Server error: ${response.status}, trying the next one

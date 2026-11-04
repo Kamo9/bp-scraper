@@ -66,6 +66,8 @@ async def upload_inventory(payload: dict, db: session = Depends(get_db)):
 					part2_count = int(strange_raw.attrs.get("data-part_score_2", "0").replace(",", "")) if strange_raw.attrs.get("data-part_name_2") else None,
 					part3_name = strange_raw.attrs.get("data-part_name_3"), 
 					part3_count = int(strange_raw.attrs.get("data-part_score_3", "0").replace(",", "")) if strange_raw.attrs.get("data-part_name_3") else None,
+					custom_name = strange_raw.attrs.get("data-custom_name"),
+					custom_desc = strange_raw.attrs.get("data-custom_desc")
 				);
 			if(original_id not in existing_original_ids_in_url_table):
 				strange_image = models.WeaponImages(
@@ -115,7 +117,7 @@ async def fetch_user_items(steamid64: str, db: session = Depends(get_db), latest
 		query = text("""
 			SELECT distinct w.original_id, w.name, wi.url
 			FROM weapons w
-			JOIN weapon_images wi
+			LEFT JOIN weapon_images wi
 			ON w.original_id = wi.original_id
 			WHERE steamid = :steamid64 
 			AND timestamp = (select timestamp from weapons where steamid = :steamid64 order by timestamp desc limit 1)
@@ -165,8 +167,8 @@ async def fetch_item_data(original_id: str, steamid64: str, db: session = Depend
 		for row in items_query_result:
 			items_dict_result[row[0]] = [x for x in row[1:]];
 
-		# get markers for the item
-		marker_query = text("""
+		# get name changes for the item
+		name_change_query = text("""
 			SELECT min(timestamp), name 
 			FROM weapons 
 			WHERE steamid = :steamid64
@@ -175,20 +177,60 @@ async def fetch_item_data(original_id: str, steamid64: str, db: session = Depend
 			ORDER BY min(timestamp) asc
 			OFFSET 1
 			""");
-		marker_query_result = db.execute(marker_query, {"steamid64": steamid64, "original_id": original_id});
+		name_change_query_result = db.execute(name_change_query, {"steamid64": steamid64, "original_id": original_id});
 
-		marker_list_result = [];
-		for row in marker_query_result:
+		name_change_list = [];
+		for row in name_change_query_result:
 			marker = {
 				"timestamp": row[0],
 				"name": row[1]
 			}
-			marker_list_result.append(marker);
+			name_change_list.append(marker);
 
+		custom_name_change_query = text("""
+			SELECT min(timestamp), custom_name 
+			FROM weapons 
+			WHERE steamid = :steamid64
+			AND original_id = :original_id
+			GROUP BY custom_name
+			ORDER BY min(timestamp) asc
+			OFFSET 1
+			""");
+		custom_name_change_query_result = db.execute(custom_name_change_query, {"steamid64": steamid64, "original_id": original_id});
+
+		custom_name_change_list = [];
+		for row in custom_name_change_query_result:
+			marker = {
+				"timestamp": row[0],
+				"name": row[1]
+			}
+			custom_name_change_list.append(marker);
+
+		custom_desc_change_query = text("""
+			SELECT min(timestamp), custom_desc 
+			FROM weapons 
+			WHERE steamid = :steamid64
+			AND original_id = :original_id
+			GROUP BY custom_desc
+			ORDER BY min(timestamp) asc
+			OFFSET 1
+			""");
+		custom_desc_change_query_result = db.execute(custom_desc_change_query, {"steamid64": steamid64, "original_id": original_id});
+
+		custom_desc_change_list = [];
+		for row in custom_desc_change_query_result:
+			marker = {
+				"timestamp": row[0],
+				"name": row[1]
+			}
+			custom_desc_change_list.append(marker);
 		return{
 			"status": "success",
 			"item_data": items_dict_result,
-			"item_markers": marker_list_result
+			"name_change_list": name_change_list,
+			"custom_name_change_list": custom_name_change_list,
+			"custom_desc_change_list": custom_desc_change_list
+
 		}
 	except Exception as e:
 		return{

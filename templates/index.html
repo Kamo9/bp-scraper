@@ -184,8 +184,9 @@
 				<h2>Your stats</h2>
 				<h4>Your stats for downloaded inventories</h4>
 				<h4>If the data is incomplete, download the remaining backpack.tf inventories.</h4>	
-				<p>Your steamid64:</p>
 				<div style="float: left;"><input type="checkbox" id="latest-inv-checkbox"> Only latest inventory?</div><br>
+				<div style="float: left;"><input type="text" id="filter-text-field"><button id="filter-button">Filter by name</button></div><br><br>
+				<p>Your steamid64:</p>
 				<input type="text" id="steamid">
 				<button id="get-data">Show your data</button>
 				<div id="item-buttons-container">
@@ -218,6 +219,7 @@ const BACKEND_URL = "http://localhost:8001";
 let steamid64 = ""; //yes this is needed because when i pass it between functions it for some reason changes to a number and gets rounded
 const item_charts = {};
 const chart_contexts = {};
+const displayed_items = new Map();
 
 function show_extension(){
 	document.getElementById("content-extension").classList.remove("hide");
@@ -259,7 +261,10 @@ async function display_data_for_item(original_id){
 		const item_data_json = await item_data_response.json();
 
 		const item_data_map = new Map(Object.entries(item_data_json.item_data));
-		const item_markers_list = item_data_json.item_markers;
+
+		const item_name_change_list = item_data_json.name_change_list;
+		const item_custom_name_change_list = item_data_json.custom_name_change_list;
+		const item_custom_desc_change_list = item_data_json.custom_desc_change_list;
 		
 		const latest_timestamp = Array.from(item_data_map.keys()).pop(); // for the "Current stats:"
 
@@ -329,18 +334,52 @@ async function display_data_for_item(original_id){
 
 		const marker_configs = {};
 
-		item_markers_list.forEach((marker, index) => {
+		item_name_change_list.forEach((marker, index) => {
 			const marker_key = `marker${index}`;
 			marker_configs[marker_key] = {
 				type: "line",
-				borderWidth: 2,
+				borderWidth: 3,
 				borderColor: "#FFFFFF",
 				scaleID : "x",
 				value: marker.timestamp * 1000,
 				label: {
 					display: false,
 					content: `Name change: ${marker.name}`,
-					yAdjust: -(40+20*index),
+					backgroundColor: "rgba(245,245,245,0)",
+					font:{
+						size: 10
+					}
+				},
+				enter({chart}){
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = true;
+			        chart.update('none');
+			    },
+			    leave({chart}) {
+			        //chart.options.plugins.annotation.annotations[marker_key].label.display = false;
+			        chart.update('none');
+			    },
+			    click({chart}){
+			    	if(chart.options.plugins.annotation.annotations[marker_key].label.display = false){
+			    		chart.options.plugins.annotation.annotations[marker_key].label.display = true;
+			    	}else{
+			    		chart.options.plugins.annotation.annotations[marker_key].label.display = false;
+			    	}
+			    }
+			}
+
+		});
+		item_custom_desc_change_list.forEach((marker, index) => {
+			const marker_key = `marker${index}`;
+			marker_configs[marker_key] = {
+				type: "line",
+				borderWidth: 3,
+				borderColor: "#EBBBE4",
+				scaleID : "x",
+				value: marker.timestamp * 1000,
+				label: {
+					display: false,
+					content: `Custom desc change: ${marker.name}`,
+					color: "#EBBBE4",
 					backgroundColor: "rgba(245,245,245,0)",
 					font:{
 						size: 10
@@ -353,6 +392,48 @@ async function display_data_for_item(original_id){
 			    leave({chart}) {
 			        chart.options.plugins.annotation.annotations[marker_key].label.display = false;
 			        chart.update('none');
+			    },
+			    click({chart}){
+			    	if(chart.options.plugins.annotation.annotations[marker_key].label.display = false){
+			    		chart.options.plugins.annotation.annotations[marker_key].label.display = true;
+			    	}else{
+			    		chart.options.plugins.annotation.annotations[marker_key].label.display = false;
+			    	}
+			    }
+			}
+
+		});
+		item_custom_name_change_list.forEach((marker, index) => {
+			const marker_key = `marker${index}`;
+			marker_configs[marker_key] = {
+				type: "line",
+				borderWidth: 3,
+				borderColor: "#C5F6B5",
+				scaleID : "x",
+				value: marker.timestamp * 1000,
+				label: {
+					display: false,
+					content: `Custom name change: ${marker.name}`,
+					color: "#C5F6B5",
+					backgroundColor: "rgba(245,245,245,0)",
+					font:{
+						size: 10
+					}
+				},
+				enter({chart}){
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = true;
+			        chart.update('none');
+			    },
+			    leave({chart}) {
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = false;
+			        chart.update('none');
+			    },
+			    click({chart}){
+			    	if(chart.options.plugins.annotation.annotations[marker_key].label.display = false){
+			    		chart.options.plugins.annotation.annotations[marker_key].label.display = true;
+			    	}else{
+			    		chart.options.plugins.annotation.annotations[marker_key].label.display = false;
+			    	}
 			    }
 			}
 
@@ -406,12 +487,25 @@ document.getElementById("get-data").addEventListener("click", async () => {
 
 	items_response = await fetch(`${BACKEND_URL}/api/fetch-user-items/${steamid64}?latest=${latest_checkbox_status}`);
 	items_json = (await items_response.json()).items;
+
 	items_map = new Map(Object.entries(items_json));
 
-
 	items_map.forEach((value, key) => {
-		item_container.innerHTML += `<button onclick="display_data_for_item(${key})"  style="${value[1]}" class="item-button" id="item-button-${key}">${value[0]}</button>`;
+		item_container.insertAdjacentHTML("beforeend", `<button onclick="display_data_for_item(${key})"  style="${value[1]}" class="item-button" id="item-button-${key}">${value[0]}</button>`);
 	})
-})
+});
+//-- on "filter by name" button click
+document.getElementById("filter-button").addEventListener("click", () => {
+	const filter_by = document.getElementById("filter-text-field").value.toLowerCase();
+	const buttons_container = document.getElementById("item-buttons-container");
+	for(let i = 0; buttons_container.childNodes[i-1] != buttons_container.lastChild; i++){
+		buttons_container.childNodes[i].classList.remove("hide");
+		if(buttons_container.childNodes[i].innerText.toLowerCase().includes(filter_by)){
+			buttons_container.childNodes[i].classList.remove("hide");
+		}else{
+			buttons_container.childNodes[i].classList.add("hide");
+		}
+	}
+});
 </script>
 </html>
