@@ -167,69 +167,25 @@ async def fetch_item_data(original_id: str, steamid64: str, db: session = Depend
 		for row in items_query_result:
 			items_dict_result[row[0]] = [x for x in row[1:]];
 
-		# get name changes for the item
-		name_change_query = text("""
-			SELECT min(timestamp), name 
+		marker_items = ["name", "custom_name", "custom_desc"];
+		marker_lists = {};
+		for marker_item in marker_items:
+			query = text(f"""
+			SELECT min(timestamp), {marker_item}
 			FROM weapons 
 			WHERE steamid = :steamid64
 			AND original_id = :original_id
-			GROUP BY name
+			GROUP BY {marker_item}
 			ORDER BY min(timestamp) asc
 			OFFSET 1
 			""");
-		name_change_query_result = db.execute(name_change_query, {"steamid64": steamid64, "original_id": original_id});
+			query_result = db.execute(query, {"steamid64": steamid64, "original_id": original_id});
+			marker_lists[marker_item] = [{"timestamp": row[0], "name": row[1]} for row in query_result];
 
-		name_change_list = [];
-		for row in name_change_query_result:
-			marker = {
-				"timestamp": row[0],
-				"name": row[1]
-			}
-			name_change_list.append(marker);
-
-		custom_name_change_query = text("""
-			SELECT min(timestamp), custom_name 
-			FROM weapons 
-			WHERE steamid = :steamid64
-			AND original_id = :original_id
-			GROUP BY custom_name
-			ORDER BY min(timestamp) asc
-			OFFSET 1
-			""");
-		custom_name_change_query_result = db.execute(custom_name_change_query, {"steamid64": steamid64, "original_id": original_id});
-
-		custom_name_change_list = [];
-		for row in custom_name_change_query_result:
-			marker = {
-				"timestamp": row[0],
-				"name": row[1]
-			}
-			custom_name_change_list.append(marker);
-
-		custom_desc_change_query = text("""
-			SELECT min(timestamp), custom_desc 
-			FROM weapons 
-			WHERE steamid = :steamid64
-			AND original_id = :original_id
-			GROUP BY custom_desc
-			ORDER BY min(timestamp) asc
-			OFFSET 1
-			""");
-		custom_desc_change_query_result = db.execute(custom_desc_change_query, {"steamid64": steamid64, "original_id": original_id});
-
-		custom_desc_change_list = [];
-		for row in custom_desc_change_query_result:
-			marker = {
-				"timestamp": row[0],
-				"name": row[1]
-			}
-			custom_desc_change_list.append(marker);
 		return{
 			"status": "success",
 			"item_data": items_dict_result,
-			"name_change_list": name_change_list,
-			"custom_name_change_list": custom_name_change_list,
-			"custom_desc_change_list": custom_desc_change_list
+			"marker_lists": marker_lists
 
 		}
 	except Exception as e:

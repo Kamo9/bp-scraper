@@ -262,9 +262,9 @@ async function display_data_for_item(original_id){
 
 		const item_data_map = new Map(Object.entries(item_data_json.item_data));
 
-		const item_name_change_list = item_data_json.name_change_list;
-		const item_custom_name_change_list = item_data_json.custom_name_change_list;
-		const item_custom_desc_change_list = item_data_json.custom_desc_change_list;
+		const item_name_change_list = item_data_json.marker_lists.name;
+		const item_custom_name_change_list = item_data_json.marker_lists.custom_name;
+		const item_custom_desc_change_list = item_data_json.marker_lists.custom_desc;
 		
 		const latest_timestamp = Array.from(item_data_map.keys()).pop(); // for the "Current stats:"
 
