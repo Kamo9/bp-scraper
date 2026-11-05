@@ -149,7 +149,7 @@
 			text-align: left;
 			color: #CF6A32;
 			border: 2px solid black;
-			background-color: slategray;
+			background-color: lightgray;
 			margin: 5px;
 		}
 		.item-canvas{
@@ -270,7 +270,7 @@ async function display_data_for_item(original_id){
 		current_item_button.classList.add("active-item-button");
 
 		chart_container.insertAdjacentHTML("beforeend", 
-			`<div class="item-data-box" id="item-data-${original_id}">
+			`<div class="item-data-box" id="item-data-${original_id}" onauxclick="display_data_for_item(${original_id})">
 			<a href="https://backpack.tf/item/${original_id}" class="greenbutton bp-history-button" target="_blank">backpack.tf history link</a>
 			<h3>${item_data_map.get(latest_timestamp)[0]}</h3>
 			<p>Current stats: ${item_data_map.get(latest_timestamp).slice(1).join(" ")}</p>
@@ -336,7 +336,8 @@ async function display_data_for_item(original_id){
 				label: {
 					display: false,
 					content: `Name change: ${marker.name}`,
-					backgroundColor: "rgba(245,245,245,0)",
+					yAdjust: -50,
+					backgroundColor: "rgba(0,0,0,0.6)",
 					font:{
 						size: 10
 					}
@@ -363,7 +364,8 @@ async function display_data_for_item(original_id){
 					display: false,
 					content: `Custom name change: ${marker.name}`,
 					color: "#EBBBE4",
-					backgroundColor: "rgba(245,245,245,0)",
+					yAdjust: -50,
+					backgroundColor: "rgba(0,0,0,0.6)",
 					font:{
 						size: 10
 					}
@@ -390,7 +392,8 @@ async function display_data_for_item(original_id){
 					display: false,
 					content: `Custom desc change: ${marker.name}`,
 					color: "#40CDC4",
-					backgroundColor: "rgba(245,245,245,0)",
+					yAdjust: -50,
+					backgroundColor: "rgba(0,0,0,0.6)",
 					font:{
 						size: 10
 					}
@@ -417,7 +420,8 @@ async function display_data_for_item(original_id){
 					display: false,
 					content: `Strange part 1 change: ${marker.name}`,
 					color: "#81ADD5",
-					backgroundColor: "rgba(245,245,245,0)",
+					yAdjust: -50,
+					backgroundColor: "rgba(0,0,0,0.6)",
 					font:{
 						size: 10
 					}
@@ -444,6 +448,7 @@ async function display_data_for_item(original_id){
 					display: false,
 					content: `Strange part 2 change: ${marker.name}`,
 					color: "#E56767",
+					yAdjust: -50,
 					backgroundColor: "rgba(245,245,245,0)",
 					font:{
 						size: 10
@@ -471,6 +476,7 @@ async function display_data_for_item(original_id){
 					display: false,
 					content: `Strange part 3 change: ${marker.name}`,
 					color: "#B2F49D",
+					yAdjust: -50,
 					backgroundColor: "rgba(245,245,245,0)",
 					font:{
 						size: 10
@@ -495,7 +501,7 @@ async function display_data_for_item(original_id){
 				options:{
 					scales: {
 						y: {
-							beginAtZero: true
+							beginAtZero: true,
 						},
 						x: {
 							type: "time",
@@ -504,7 +510,7 @@ async function display_data_for_item(original_id){
 									day: "dd-MM-yyyy"
 								},
 								tooltipFormat: "dd-MM-yyyy"
-							}
+							},
 						}
 					},
 					responsive: true,
