@@ -219,7 +219,6 @@ const BACKEND_URL = "http://localhost:8001";
 let steamid64 = ""; //yes this is needed because when i pass it between functions it for some reason changes to a number and gets rounded
 const item_charts = {};
 const chart_contexts = {};
-const displayed_items = new Map();
 
 function show_extension(){
 	document.getElementById("content-extension").classList.remove("hide");
@@ -236,14 +235,9 @@ function show_display(){
 	document.getElementById("content-home").classList.add("hide");
 	document.getElementById("content-extension").classList.add("hide");
 }
-function formatted_date(timestamp){
-	const date = new Date(timestamp * 1000);
-	const day = date.getDate();
-	const month = date.getMonth();
-}
 //-- on item button click
 async function display_data_for_item(original_id){
-	const box_container = document.getElementById("right-section-charts");
+	const chart_container = document.getElementById("right-section-charts");
 	const current_item_data_box = document.getElementById(`item-data-${original_id}`);
 	const current_item_button = document.getElementById(`item-button-${original_id}`);
 
@@ -262,43 +256,40 @@ async function display_data_for_item(original_id){
 
 		const item_data_map = new Map(Object.entries(item_data_json.item_data));
 
-		const item_name_change_list = item_data_json.marker_lists.name;
-		const item_custom_name_change_list = item_data_json.marker_lists.custom_name;
-		const item_custom_desc_change_list = item_data_json.marker_lists.custom_desc;
-		
-		const latest_timestamp = Array.from(item_data_map.keys()).pop(); // for the "Current stats:"
+		marker_lists = {
+			item_name: item_data_json.marker_lists.name,
+			custom_name: item_data_json.marker_lists.custom_name,
+			custom_desc: item_data_json.marker_lists.custom_desc,
+			part1_name: item_data_json.marker_lists.part1_name,
+			part2_name: item_data_json.marker_lists.part2_name,
+			part3_name: item_data_json.marker_lists.part3_name
+		};
 
-		box_container.insertAdjacentHTML("beforeend", `<div class="item-data-box" id="item-data-${original_id}">
-			<a href="https://backpack.tf/item/${original_id}" class="greenbutton bp-history-button"target="_blank">backpack.tf history link</a>
-			<h3>${item_data_map.get(latest_timestamp)[0]}</h3>
-			<p>Current stats: ${item_data_map.get(latest_timestamp).slice(1).join(" ")}</p>
-			<canvas class="item-canvas" id="item-canvas-${original_id}"></canvas>
-			</div>`);
+		const latest_timestamp = Array.from(item_data_map.keys()).pop(); // for the "Current stats:"
 
 		current_item_button.classList.add("active-item-button");
 
-		const context = document.getElementById(`item-canvas-${original_id}`).getContext("2d");
+		chart_container.insertAdjacentHTML("beforeend", 
+			`<div class="item-data-box" id="item-data-${original_id}">
+			<a href="https://backpack.tf/item/${original_id}" class="greenbutton bp-history-button" target="_blank">backpack.tf history link</a>
+			<h3>${item_data_map.get(latest_timestamp)[0]}</h3>
+			<p>Current stats: ${item_data_map.get(latest_timestamp).slice(1).join(" ")}</p>
+			<canvas class="item-canvas" id="item-canvas-${original_id}"></canvas>
+			</div>`
+			);
 
-		chart_contexts[original_id] = context;
+		
+		chart_contexts[original_id] = document.getElementById(`item-canvas-${original_id}`).getContext("2d");
 
-		const timestamp_array = Array.from(item_data_map.keys());
-		const chart_x = [];
-		for(let i in timestamp_array){
-			chart_x.push(timestamp_array[i] * 1000);
-		}
+		const chart_x = Array.from(item_data_map.keys()).map(timestamp => timestamp * 1000);
 
 		const value_array = Array.from(item_data_map.values());
 
-		const chart_main_stat = [];
-		const chart_part1 = [];
-		const chart_part2 = [];
-		const chart_part3 = [];
-		for (let i in value_array){
-			chart_main_stat.push(value_array[i][1]);
-			chart_part1.push(value_array[i][3]);
-			chart_part2.push(value_array[i][5]);
-			chart_part3.push(value_array[i][7]);
-		}
+		const chart_main_stat = value_array.map(x => x[1]);
+		const chart_part1 = value_array.map(x => x[3]);
+		const chart_part2 = value_array.map(x => x[5]);
+		const chart_part3 = value_array.map(x => x[7]);
+
 		const all_datasets = [{
 						data: chart_main_stat,
 						label: `${item_data_map.get(latest_timestamp)[2]}`,
@@ -334,8 +325,8 @@ async function display_data_for_item(original_id){
 
 		const marker_configs = {};
 
-		item_name_change_list.forEach((marker, index) => {
-			const marker_key = `marker${index}`;
+		marker_lists["item_name"].forEach((marker, index) => {
+			const marker_key = `marker_item_name${index}`;
 			marker_configs[marker_key] = {
 				type: "line",
 				borderWidth: 3,
@@ -355,21 +346,13 @@ async function display_data_for_item(original_id){
 			        chart.update('none');
 			    },
 			    leave({chart}) {
-			        //chart.options.plugins.annotation.annotations[marker_key].label.display = false;
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = false;
 			        chart.update('none');
-			    },
-			    click({chart}){
-			    	if(chart.options.plugins.annotation.annotations[marker_key].label.display = false){
-			    		chart.options.plugins.annotation.annotations[marker_key].label.display = true;
-			    	}else{
-			    		chart.options.plugins.annotation.annotations[marker_key].label.display = false;
-			    	}
 			    }
 			}
-
 		});
-		item_custom_desc_change_list.forEach((marker, index) => {
-			const marker_key = `marker${index}`;
+		marker_lists["custom_name"].forEach((marker, index) => {
+			const marker_key = `marker_custom_name${index}`;
 			marker_configs[marker_key] = {
 				type: "line",
 				borderWidth: 3,
@@ -378,7 +361,7 @@ async function display_data_for_item(original_id){
 				value: marker.timestamp * 1000,
 				label: {
 					display: false,
-					content: `Custom desc change: ${marker.name}`,
+					content: `Custom name change: ${marker.name}`,
 					color: "#EBBBE4",
 					backgroundColor: "rgba(245,245,245,0)",
 					font:{
@@ -392,29 +375,21 @@ async function display_data_for_item(original_id){
 			    leave({chart}) {
 			        chart.options.plugins.annotation.annotations[marker_key].label.display = false;
 			        chart.update('none');
-			    },
-			    click({chart}){
-			    	if(chart.options.plugins.annotation.annotations[marker_key].label.display = false){
-			    		chart.options.plugins.annotation.annotations[marker_key].label.display = true;
-			    	}else{
-			    		chart.options.plugins.annotation.annotations[marker_key].label.display = false;
-			    	}
 			    }
 			}
-
 		});
-		item_custom_name_change_list.forEach((marker, index) => {
-			const marker_key = `marker${index}`;
+		marker_lists["custom_desc"].forEach((marker, index) => {
+			const marker_key = `marker_custom_desc${index}`;
 			marker_configs[marker_key] = {
 				type: "line",
 				borderWidth: 3,
-				borderColor: "#C5F6B5",
+				borderColor: "#40CDC4",
 				scaleID : "x",
 				value: marker.timestamp * 1000,
 				label: {
 					display: false,
-					content: `Custom name change: ${marker.name}`,
-					color: "#C5F6B5",
+					content: `Custom desc change: ${marker.name}`,
+					color: "#40CDC4",
 					backgroundColor: "rgba(245,245,245,0)",
 					font:{
 						size: 10
@@ -427,18 +402,90 @@ async function display_data_for_item(original_id){
 			    leave({chart}) {
 			        chart.options.plugins.annotation.annotations[marker_key].label.display = false;
 			        chart.update('none');
-			    },
-			    click({chart}){
-			    	if(chart.options.plugins.annotation.annotations[marker_key].label.display = false){
-			    		chart.options.plugins.annotation.annotations[marker_key].label.display = true;
-			    	}else{
-			    		chart.options.plugins.annotation.annotations[marker_key].label.display = false;
-			    	}
 			    }
 			}
-
 		});
-
+		marker_lists["part1_name"].forEach((marker, index) => {
+			const marker_key = `marker_part1_name${index}`;
+			marker_configs[marker_key] = {
+				type: "line",
+				borderWidth: 3,
+				borderColor: "#81ADD5",
+				scaleID : "x",
+				value: marker.timestamp * 1000,
+				label: {
+					display: false,
+					content: `Strange part 1 change: ${marker.name}`,
+					color: "#81ADD5",
+					backgroundColor: "rgba(245,245,245,0)",
+					font:{
+						size: 10
+					}
+				},
+				enter({chart}){
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = true;
+			        chart.update('none');
+			    },
+			    leave({chart}) {
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = false;
+			        chart.update('none');
+			    }
+			}
+		});
+		marker_lists["part2_name"].forEach((marker, index) => {
+			const marker_key = `marker_part2_name${index}`;
+			marker_configs[marker_key] = {
+				type: "line",
+				borderWidth: 3,
+				borderColor: "#E56767",
+				scaleID : "x",
+				value: marker.timestamp * 1000,
+				label: {
+					display: false,
+					content: `Strange part 2 change: ${marker.name}`,
+					color: "#E56767",
+					backgroundColor: "rgba(245,245,245,0)",
+					font:{
+						size: 10
+					}
+				},
+				enter({chart}){
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = true;
+			        chart.update('none');
+			    },
+			    leave({chart}) {
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = false;
+			        chart.update('none');
+			    }
+			}
+		});
+		marker_lists["part3_name"].forEach((marker, index) => {
+			const marker_key = `part3_name${index}`;
+			marker_configs[marker_key] = {
+				type: "line",
+				borderWidth: 3,
+				borderColor: "#B2F49D",
+				scaleID : "x",
+				value: marker.timestamp * 1000,
+				label: {
+					display: false,
+					content: `Strange part 3 change: ${marker.name}`,
+					color: "#B2F49D",
+					backgroundColor: "rgba(245,245,245,0)",
+					font:{
+						size: 10
+					}
+				},
+				enter({chart}){
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = true;
+			        chart.update('none');
+			    },
+			    leave({chart}) {
+			        chart.options.plugins.annotation.annotations[marker_key].label.display = false;
+			        chart.update('none');
+			    }
+			}
+		});
 		item_charts[original_id] = new Chart(chart_contexts[original_id], {
 				type: "line",
 				data: {

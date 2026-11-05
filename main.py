@@ -1,15 +1,13 @@
 import models
 from database import engine, Base, get_db, session
 
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, Depends, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from bs4 import BeautifulSoup
-from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
-import requests
 import json
 from lxml import etree
 
@@ -23,8 +21,8 @@ templates = Jinja2Templates(directory="templates");
 
 @app.get("/api/get-existing-timestamps/{steamid64}")
 async def get_existing_timestamps(steamid64: str, db: session = Depends(get_db)):
+	query = text("SELECT DISTINCT timestamp from weapons where steamid = :steamid64");
 	try:
-		query = text("SELECT DISTINCT timestamp from weapons where steamid = :steamid64");
 		query_result = db.execute(query, {"steamid64": steamid64});
 		timestamps = set([row[0] for row in query_result]);
 
@@ -35,16 +33,22 @@ async def get_existing_timestamps(steamid64: str, db: session = Depends(get_db))
 		}
 	except Exception as e:
 		return{
-					"status": "error",
-					"message": f"Failure: {e}"
+			"status": "error",
+			"message": f"Failure: {e}"
 				}
 
 @app.post("/api/upload-inventory")
 async def upload_inventory(payload: dict, db: session = Depends(get_db)):
 	# to not put excess weapon urls in the database. Pull existing first, if the current weapon's original_id is not in the table, add it.
 	original_id_query = text("SELECT DISTINCT original_id FROM weapon_images");
-	original_id_query_result = db.execute(original_id_query);
-	existing_original_ids_in_url_table = list(row[0] for row in original_id_query_result);
+	try:
+		original_id_query_result = db.execute(original_id_query);
+	except Exception as e:
+		return{
+			"status": "error",
+			"message": f"Databsase failure: {e}"
+		}
+	existing_original_ids_in_url_table = [row[0] for row in original_id_query_result];
 
 	steamid64 = payload.get("steamid64");
 	inv_json = payload.get("inv_json");
@@ -115,22 +119,24 @@ async def upload_inventory(payload: dict, db: session = Depends(get_db)):
 async def fetch_user_items(steamid64: str, db: session = Depends(get_db), latest: bool | None = None):
 	if(latest):
 		query = text("""
-			SELECT distinct w.original_id, w.name, wi.url
+			SELECT distinct w.original_id, w.name, wi.url, strange_count
 			FROM weapons w
 			LEFT JOIN weapon_images wi
 			ON w.original_id = wi.original_id
 			WHERE steamid = :steamid64 
 			AND timestamp = (select timestamp from weapons where steamid = :steamid64 order by timestamp desc limit 1)
+			ORDER BY strange_count DESC
 			""");
 	else:
 		query = text("""
-			SELECT w.original_id, max(w.name), max(wi.url)
+			SELECT w.original_id, max(w.name), max(wi.url), max(strange_count)
 			FROM weapons w
 			LEFT JOIN weapon_images wi
 			ON w.original_id = wi.original_id
 			WHERE steamid = :steamid64 
 			GROUP BY w.original_id
 			HAVING max(strange_count) > 50
+			ORDER BY max(strange_count) DESC
 			""");
 	
 	try:
@@ -153,21 +159,21 @@ async def fetch_user_items(steamid64: str, db: session = Depends(get_db), latest
 
 @app.get("/api/fetch-item-data/{original_id}/{steamid64}")
 async def fetch_item_data(original_id: str, steamid64: str, db: session = Depends(get_db)):
-	try:
-		items_query = text("""
+	items_query = text("""
 				SELECT timestamp, name, strange_count, strange_count_name, part1_count, part1_name, part2_count, part2_name, part3_count, part3_name
 				FROM weapons
 				WHERE steamid = :steamid64
 				AND original_id = :original_id
 				ORDER BY timestamp ASC
-			""");
+		""");
+	try:
 		items_query_result = db.execute(items_query, {"steamid64": steamid64, "original_id": original_id});
 
 		items_dict_result = {};
 		for row in items_query_result:
 			items_dict_result[row[0]] = [x for x in row[1:]];
 
-		marker_items = ["name", "custom_name", "custom_desc"];
+		marker_items = ["name", "custom_name", "custom_desc", "part1_name", "part2_name", "part3_name"];
 		marker_lists = {};
 		for marker_item in marker_items:
 			query = text(f"""
